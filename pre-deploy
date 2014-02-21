@@ -22,10 +22,8 @@ fi
 
 if [[ -d "$VOLUME_DIR" ]]; then
     VOLUME="$VOLUME_DIR:/rethinkdb"
-    echo
     echo "-----> Starting linked container $CONTAINER_NAME ..."
     docker run -v $VOLUME -name=$CONTAINER_NAME -d $RETHINKDB_IMAGE
     sleep 1
     dokku rethinkdb:info $APP
-    echo
 fi

@@ -67,6 +67,13 @@ These steps can be done in either order - if an app has been pushed to the
 server, "rethinkdb:create" will re-deploy it with the RethinkDB container
 linked.
 
+The container will be exposed in the config/app environment as `RETHINKDB_HOST`
+and `RETHINKDB_PORT`, as well as `RDB_HOST` and `RDB_PORT` (the names used by
+the RethinkDB example apps).
+
+You can also use "rethinkdb:create" to re-create the link configuration in the
+app's environment (the container data will not be clobbered).
+
 ## Advanced usage
 
 Unlink and delete a RethinkDB container:
