@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 
+RETHINKDB_IMAGE=crosbymichael/rethinkdb
+
+PENDING_DIR="$DOKKU_ROOT/.rethinkdb/pending-volumes"
+
 # Check if name is specified
 if [[ $1 == rethinkdb:* ]]; then
     if [[ -z $2 ]]; then
@@ -8,8 +12,7 @@ if [[ $1 == rethinkdb:* ]]; then
         exit 1
     else
         APP="$2"
-        # Check if app has been received
-        if [[ -d "$DOKKU_ROOT/$APP/refs" ]]; then
+        if [[ -d "$DOKKU_ROOT/$APP" ]]; then
             APP_EXISTS=true
         else
             APP_EXISTS=false
@@ -39,24 +42,20 @@ case "$1" in
     if [[ -d $VOLUME_DIR ]]; then
         echo "-----> Reusing $CONTAINER_NAME data"
     else
-        echo "-----> Creating new container: $CONTAINER_NAME"
-        mkdir -p $VOLUME_DIR
-        chown -R dokku:dokku $VOLUME_DIR
+        echo "-----> Creating new RethinkDB volume for $APP"
+        if $APP_EXISTS; then
+            mkdir -p "$VOLUME_DIR"
+            chown -R dokku:dokku "$VOLUME_DIR"
+        else
+            mkdir -p "$PENDING_DIR/$APP"
+            chown -R dokku:dokku "$PENDING_DIR"
+            # Container will be linked in pre-release hook
+        fi
     fi
-
-    # Add aliases for RETHINKDB variables
-    if [ -f $ENV_FILE ]; then
-        sed -i "/^export (?:RETHINKDB|RDB)_(?:HOST|PORT)=/ d" $ENV_FILE
-    fi
-    echo >>$ENV_FILE <<"EOF"
-export RETHINKDB_HOST=$RETHINKDB_LINK_PORT_28015_TCP_ADDR
-export RETHINKDB_PORT=$RETHINKDB_LINK_PORT_28015_TCP_PORT
-export RDB_HOST=$RETHINKDB_LINK_PORT_28015_TCP_ADDR
-export RDB_PORT=$RETHINKDB_LINK_PORT_28015_TCP_PORT
-EOF
 
     if $APP_EXISTS; then
         # Container will be launched in pre-deploy hook
+        dokku rethinkdb:link $APP
         config_restart_app $APP
     fi
     ;;
@@ -68,29 +67,85 @@ EOF
         docker stop $ID > /dev/null
         docker rm $ID  > /dev/null
     fi
+    
     # Remove persistent volume
-    if [[ -d $VOLUME_DIR ]]; then
-        rm -rf $VOLUME_DIR
+    if [[ -d "$VOLUME_DIR" ]]; then
+        rm -rf "$VOLUME_DIR"
+    fi
+    if [[ -d "$PENDING_DIR/$APP" ]]; then
+        rm -rf "$PENDING_DIR/$APP"
     fi
 
-    sed -i "/^export (?:RETHINKDB|RDB)_HOST=\$RETHINKDB_LINK_PORT_28015_TCP_ADDR$/ d" $ENV_FILE
-    sed -i "/^export (?:RETHINKDB|RDB)_PORT=\$RETHINKDB_LINK_PORT_28015_TCP_PORT$/ d" $ENV_FILE
+    if [[ -f $ENV_FILE ]]; then
+        sed -i "/^export (?:RETHINKDB|RDB)_HOST=\$RETHINKDB_LINK_PORT_28015_TCP_ADDR$/ d" $ENV_FILE
+        sed -i "/^export (?:RETHINKDB|RDB)_PORT=\$RETHINKDB_LINK_PORT_28015_TCP_PORT$/ d" $ENV_FILE
+    fi
     echo "-----> RethinkDB container deleted: $CONTAINER_NAME"
-    config_restart_app $APP
+    if $APP_EXISTS; then
+        config_restart_app $APP
+    fi
+    ;;
+
+  rethinkdb:link)
+    if $APP_EXISTS; then
+        # Add aliases for RETHINKDB variables
+        if [ -f $ENV_FILE ]; then
+            sed -i "/^export (?:RETHINKDB|RDB)_(?:HOST|PORT)=/ d" $ENV_FILE
+        fi
+        echo >>$ENV_FILE <<"EOF"
+export RETHINKDB_HOST=$RETHINKDB_LINK_PORT_28015_TCP_ADDR
+export RETHINKDB_PORT=$RETHINKDB_LINK_PORT_28015_TCP_PORT
+export RDB_HOST=$RETHINKDB_LINK_PORT_28015_TCP_ADDR
+export RDB_PORT=$RETHINKDB_LINK_PORT_28015_TCP_PORT
+EOF
+    else
+        echo "Cannot link non-existing app"
+        exit 1
+    fi
+    ;;
+
+  rethinkdb:stop)
+    ID=$(docker ps | grep "$CONTAINER_NAME" | awk '{print $1}')
+    if [[ ! -z "$ID" ]]; then
+        docker stop $ID > /dev/null
+    fi
+    ;;
+
+  rethinkdb:start)
+    VOLUME=""
+    if [[ -d "$VOLUME_DIR" ]]; then
+        VOLUME="$VOLUME_DIR:/rethinkdb"
+    elif [[ -d "$PENDING_DIR/$APP" ]]; then
+        VOLUME="$PENDING_DIR/$APP:/rethinkdb"
+    fi
+    
+    if [[ -z $VOLUME ]]
+        echo "No RethinkDB volume found for $APP"
+        exit 1
+    else
+        # Stop existing container with the same persistent RethinkDB
+        dokku rethinkdb:stop app
+        
+        # Check if RethinkDB image is installed, and pull it if not
+        IMAGE=$(docker images | grep $RETHINKDB_IMAGE | awk '{print $3}')
+        if [[ -z $IMAGE ]]; then
+            docker pull $RETHINKDB_IMAGE
+        fi
+        
+        docker run -v $VOLUME -name=$CONTAINER_NAME -d $RETHINKDB_IMAGE
+        sleep 1
+        dokku rethinkdb:info $APP
+    fi
     ;;
 
   rethinkdb:info)
     ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
     IP=$(docker inspect $ID | grep IPAddress | cut -d '"' -f 4)
-    PORT=$(docker port $ID 28015 | cut -d":" -f2)
-    for var in "$@"; do
-      if [[ "$var" == "--shell" ]]; then
-        echo "RETHINKDB_HOST=${IP} RETHINKDB_PORT=${PORT}"
-        exit 0
-      fi
-    done
-    echo "       RETHINKDB_HOST: ${IP}"
-    echo "       RETHINKDB_PORT: ${PORT}"
+    RDB_PORT=$(docker port $ID 28015 | cut -d":" -f2)
+    WEBUI_PORT=$(docker port $ID 8080 | cut -d":" -f2)
+    echo "       Host: ${IP}"
+    echo "       Public RDB port: ${RDB_PORT}"
+    echo "       Public Web UI port: ${WEBUI_PORT}"
     ;;
 
   rethinkdb:logs)
@@ -102,7 +157,10 @@ EOF
     cat && cat<<EOF
     rethinkdb:create <app>                          Create a RethinkDB container
     rethinkdb:delete <app>                          Delete specified RethinkDB container
-    rethinkdb:info <app>                            Display RethinkDB container information
+    rethinkdb:link <app>                            Set variables to link to RethinkDB container
+    rethinkdb:start <app>                           Start app's RethinkDB container
+    rethinkdb:stop <app>                            Stop app's RethinkDB container
+    rethinkdb:info <app>                            Display RethinkDB container address and ports
     rethinkdb:logs <app>                            Display last logs from RethinkDB container
 EOF
     ;;

@@ -71,10 +71,25 @@ The container will be exposed in the config/app environment as `RETHINKDB_HOST`
 and `RETHINKDB_PORT`, as well as `RDB_HOST` and `RDB_PORT` (the names used by
 the RethinkDB example apps).
 
-You can also use "rethinkdb:create" to re-create the link configuration in the
-app's environment (the container data will not be clobbered).
-
 ## Advanced usage
+
+(Re)start a RethinkDB container independently of a running app:
+
+```
+dokku rethinkdb:start app
+```
+
+Stop an app's running RethinkDB container:
+
+```
+dokku rethinkdb:stop app
+```
+
+(Re)set config variables to direct to a linked RethinkDB container:
+
+```
+dokku rethinkdb:link foo
+```
 
 Unlink and delete a RethinkDB container:
 
@@ -82,13 +97,13 @@ Unlink and delete a RethinkDB container:
 dokku rethinkdb:delete foo
 ```
 
-RethinkDB logs (per container):
+Read app RethinkDB logs:
 
 ```
 dokku rethinkdb:logs foo
 ```
 
-RethinkDB information:
+Get RethinkDB address and ports:
 
 ```
 dokku rethinkdb:info foo

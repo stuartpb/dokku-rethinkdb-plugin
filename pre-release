@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+
+APP="$1"
+
+PENDING_DIR="$DOKKU_ROOT/.rethinkdb/pending-volumes"
+VOLUME_DIR="$DOKKU_ROOT/$APP/rethinkdb"
+
+# Link any pending volumes
+if [[ -d "$DOKKU_ROOT/$APP" -a -d "$PENDING_DIR/$APP" ]]; then
+    mv "$PENDING_DIR/$APP" "$APP/rethinkdb"
+    dokku rethinkdb:link $APP
+fi
