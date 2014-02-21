@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+
+APP="$1"
+
+CONTAINER_NAME="rethinkdb/$APP"
+VOLUME_DIR="$DOKKU_ROOT/$APP/rethinkdb"
+
+if [[ -d "$VOLUME_DIR" ]]; then
+  echo "-link $CONTAINER_NAME:rethinkdb_link"
+fi

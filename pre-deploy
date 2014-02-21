@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+
+APP="$1"
+
+RETHINKDB_IMAGE=crosbymichael/rethinkdb
+
+CONTAINER_NAME="rethinkdb/$APP"
+VOLUME_DIR="$DOKKU_ROOT/$APP/rethinkdb"
+
+# Check if RethinkDB image is installed, and pull it if not
+IMAGE=$(docker images | grep $RETHINKDB_IMAGE | awk '{print $3}')
+if [[ -z $IMAGE ]]; then
+    docker pull $RETHINKDB_IMAGE
+fi
+
+# Stop existing container with the same persistent RethinkDB
+ID=$(docker ps | grep "$CONTAINER_NAME" | awk '{print $1}')
+if [[ ! -z "$ID" ]]; then
+    docker stop $ID > /dev/null
+fi
+
+if [[ -d "$VOLUME_DIR" ]]; then
+    VOLUME="$VOLUME_DIR:/rethinkdb"
+    echo
+    echo "-----> Starting linked container $CONTAINER_NAME ..."
+    docker run -v $VOLUME -name=$CONTAINER_NAME -d $RETHINKDB_IMAGE
+    sleep 1
+    dokku rethinkdb:info $APP
+    echo
+fi
