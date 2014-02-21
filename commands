@@ -55,7 +55,7 @@ export RDB_HOST=$RETHINKDB_LINK_PORT_28015_TCP_ADDR
 export RDB_PORT=$RETHINKDB_LINK_PORT_28015_TCP_PORT
 EOF
 
-    if APP_EXISTS; then
+    if $APP_EXISTS; then
         # Container will be launched in pre-deploy hook
         config_restart_app $APP
     fi
