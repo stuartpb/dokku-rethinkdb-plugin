@@ -119,7 +119,7 @@ EOF
         VOLUME="$PENDING_DIR/$APP:/rethinkdb"
     fi
     
-    if [[ -z $VOLUME ]]
+    if [[ -z $VOLUME ]]; then
         echo "No RethinkDB volume found for $APP"
         exit 1
     else
