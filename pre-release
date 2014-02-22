@@ -6,7 +6,7 @@ APP="$1"
 PENDING_DIR="$DOKKU_ROOT/.rethinkdb/pending-volumes"
 VOLUME_DIR="$DOKKU_ROOT/$APP/rethinkdb"
 
-# Link any pending volumes
+# Grant and link any pending volumes
 if [[ -d "$DOKKU_ROOT/$APP" && -d "$PENDING_DIR/$APP" ]]; then
     mv "$PENDING_DIR/$APP" "$VOLUME_DIR"
     dokku rethinkdb:link $APP

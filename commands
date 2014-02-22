@@ -19,7 +19,7 @@ if [[ $1 == rethinkdb:* ]]; then
         fi
     fi
 
-    CONTAINER_NAME="rethinkdb/$APP"
+    CONTAINER_NAME="rethinkdb_$APP"
     VOLUME_DIR="$DOKKU_ROOT/$APP/rethinkdb"
     ENV_FILE="$DOKKU_ROOT/$APP/ENV"
 fi
@@ -123,24 +123,31 @@ EOF
         echo "No RethinkDB volume found for $APP"
         exit 1
     else
-        # Stop existing container with the same persistent RethinkDB
-        dokku rethinkdb:stop $APP
+        ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
 
-        # Check if RethinkDB image is installed, and pull it if not
-        IMAGE=$(docker images | grep $RETHINKDB_IMAGE | awk '{print $3}')
-        if [[ -z $IMAGE ]]; then
-            docker pull $RETHINKDB_IMAGE
+        if [[ -z "$ID" ]]
+            # Check if RethinkDB image is installed, and pull it if not
+            IMAGE=$(docker images | grep $RETHINKDB_IMAGE | awk '{print $3}')
+            if [[ -z $IMAGE ]]; then
+                docker pull $RETHINKDB_IMAGE
+            fi
+
+            docker run -v $VOLUME -name=$CONTAINER_NAME -d $RETHINKDB_IMAGE
+            sleep 1
+            dokku rethinkdb:info $APP
+        else
+            # If container already exists, start it if it's not running
+            RUNNING=$(docker inspect -f '{{.State.Running}}' $ID)
+            if [[ $RUNNING == "false" ]]; then
+                docker start $ID
+            fi
         fi
-
-        docker run -v $VOLUME -name=$CONTAINER_NAME -d $RETHINKDB_IMAGE
-        sleep 1
-        dokku rethinkdb:info $APP
     fi
     ;;
 
   rethinkdb:info)
     ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
-    IP=$(docker inspect $ID | grep IPAddress | cut -d '"' -f 4)
+    IP=$(docker inspect -f '{{.NetworkSettings.IPAddress}}' $ID)
     RDB_PORT=$(docker port $ID 28015 | cut -d":" -f2)
     WEBUI_PORT=$(docker port $ID 8080 | cut -d":" -f2)
     echo "       Host: ${IP}"
