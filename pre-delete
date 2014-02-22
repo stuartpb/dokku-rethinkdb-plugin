@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+
+APP="$1"
+
+CONTAINER_NAME="rethinkdb/$APP"
+
+# Kill any running RethinkDB container for this app
+ID=$(docker ps -a | grep "$CONTAINER_NAME" |  awk '{print $1}')
+if [[ ! -z $ID ]]; then
+    docker stop $ID > /dev/null
+    docker rm $ID > /dev/null
+fi
+
+# Any volume will be deleted with the app
