@@ -92,7 +92,7 @@ case "$1" in
         if [ -f $ENV_FILE ]; then
             sed -i "/^export (?:RETHINKDB|RDB)_(?:HOST|PORT)=/ d" $ENV_FILE
         fi
-        echo >>$ENV_FILE <<"EOF"
+        cat >>$ENV_FILE <<"EOF"
 export RETHINKDB_HOST=$RETHINKDB_LINK_PORT_28015_TCP_ADDR
 export RETHINKDB_PORT=$RETHINKDB_LINK_PORT_28015_TCP_PORT
 export RDB_HOST=$RETHINKDB_LINK_PORT_28015_TCP_ADDR
