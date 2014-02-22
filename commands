@@ -133,8 +133,6 @@ EOF
             fi
 
             docker run -v $VOLUME -name=$CONTAINER_NAME -d $RETHINKDB_IMAGE --bind all
-            sleep 1
-            dokku rethinkdb:info $APP
         else
             # If container already exists, start it if it's not running
             RUNNING=$(docker inspect -f '{{.State.Running}}' $ID)
@@ -142,6 +140,7 @@ EOF
                 docker start $ID
             fi
         fi
+        dokku rethinkdb:info $APP
     fi
     ;;
 

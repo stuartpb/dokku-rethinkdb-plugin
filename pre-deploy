@@ -9,4 +9,5 @@ VOLUME_DIR="$DOKKU_ROOT/$APP/rethinkdb"
 if [[ -d "$VOLUME_DIR" ]]; then
     echo "-----> Starting linked container $CONTAINER_NAME ..."
     dokku rethinkdb:start $APP
+    dokku rethinkdb:info $APP
 fi
