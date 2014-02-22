@@ -132,7 +132,7 @@ EOF
                 docker pull $RETHINKDB_IMAGE
             fi
 
-            docker run -v $VOLUME -name=$CONTAINER_NAME -d $RETHINKDB_IMAGE
+            docker run -v $VOLUME -name=$CONTAINER_NAME -d $RETHINKDB_IMAGE --bind all
             sleep 1
             dokku rethinkdb:info $APP
         else
