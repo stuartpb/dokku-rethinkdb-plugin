@@ -6,6 +6,20 @@ containers for apps.
 [Dokku]: https://github.com/progrium/dokku
 [RethinkDB]: http://www.rethinkdb.com/
 
+## Features
+
+- **No dependencies** (other than a recent development version of Dokku.)
+  *Wow!*
+- **Survives reboots, cleanups, and redeploys.** *Holy cow!*
+- **Deletes cleanly with apps.** *Am I dreaming?*
+- **Can add before or after pushing an app.** *Is this real life?*
+
+![Vince McMahon reacts to dokku-rethinkdb-plugin](http://i.imgur.com/ef28TQS.gif)
+
+**dokku-rethinkdb-plugin**: The [Gary Strydom][] of Dokku datastore plugins.
+
+[Gary Strydom]: http://forum.bodybuilding.com/showthread.php?t=157841203&s=714b6c7c5685fc9feb106e0680a2fa1e&p=1155029043&viewfull=1#post1155029043
+
 ## Installation
 
 ```bash
@@ -51,11 +65,9 @@ remote: -----> Using Ruby version: ruby-2.0.0
 ... blah blah blah ...
 
 remote: -----> Deploying foo ...
-remote:
-remote: -----> Starting linked container rethinkdb/foo ...
-remote:        RETHINKDB_HOST: 172.16.0.104
-remote:        RETHINKDB_PORT: 49187
-remote:
+remote: -----> Starting linked container rethinkdb_foo ...
+remote:        Container ID: 99797e35d7b9
+remote:        Container IP: 172.16.0.104
 remote: -----> Deploy complete!
 remote: -----> Cleaning up ...
 remote: -----> Cleanup complete!
@@ -97,7 +109,7 @@ Unlink and delete a RethinkDB container:
 dokku rethinkdb:delete foo
 ```
 
-Read app RethinkDB logs:
+Read app RethinkDB container logs:
 
 ```
 dokku rethinkdb:logs foo
