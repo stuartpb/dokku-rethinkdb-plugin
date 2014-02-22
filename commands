@@ -77,8 +77,8 @@ case "$1" in
     fi
 
     if [[ -f $ENV_FILE ]]; then
-        sed -i "/^export (?:RETHINKDB|RDB)_HOST=\$RETHINKDB_LINK_PORT_28015_TCP_ADDR$/ d" $ENV_FILE
-        sed -i "/^export (?:RETHINKDB|RDB)_PORT=\$RETHINKDB_LINK_PORT_28015_TCP_PORT$/ d" $ENV_FILE
+        sed -i '/^export (?:RETHINKDB|RDB)_HOST=$RETHINKDB_LINK_PORT_28015_TCP_ADDR$/ d' $ENV_FILE
+        sed -i '/^export (?:RETHINKDB|RDB)_PORT=$RETHINKDB_LINK_PORT_28015_TCP_PORT$/ d' $ENV_FILE
     fi
     echo "-----> RethinkDB container deleted: $CONTAINER_NAME"
     if $APP_EXISTS; then
