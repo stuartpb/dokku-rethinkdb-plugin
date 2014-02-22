@@ -140,12 +140,14 @@ EOF
 
   rethinkdb:info)
     ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
-    IP=$(docker inspect -f '{{.NetworkSettings.IPAddress}}' $ID)
-    RDB_PORT=$(docker port $ID 28015 | cut -d":" -f2)
-    WEBUI_PORT=$(docker port $ID 8080 | cut -d":" -f2)
-    echo "       Host: ${IP}"
-    echo "       Public RDB port: ${RDB_PORT}"
-    echo "       Public Web UI port: ${WEBUI_PORT}"
+    if [[ -z "$ID" ]]; then
+        echo "No container found for $APP"
+        exit 1
+    else
+        IP=$(docker inspect -f '{{.NetworkSettings.IPAddress}}' $ID)
+        echo "       Container ID: ${ID}"
+        echo "       Container IP: ${IP}"
+    fi
     ;;
 
   rethinkdb:logs)
