@@ -124,7 +124,7 @@ EOF
         exit 1
     else
         # Stop existing container with the same persistent RethinkDB
-        dokku rethinkdb:stop app
+        dokku rethinkdb:stop $APP
         
         # Check if RethinkDB image is installed, and pull it if not
         IMAGE=$(docker images | grep $RETHINKDB_IMAGE | awk '{print $3}')
