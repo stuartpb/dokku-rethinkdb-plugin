@@ -125,7 +125,7 @@ EOF
     else
         ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
 
-        if [[ -z "$ID" ]]
+        if [[ -z "$ID" ]]; then
             # Check if RethinkDB image is installed, and pull it if not
             IMAGE=$(docker images | grep $RETHINKDB_IMAGE | awk '{print $3}')
             if [[ -z $IMAGE ]]; then
