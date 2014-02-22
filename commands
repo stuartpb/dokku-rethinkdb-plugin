@@ -64,7 +64,7 @@ case "$1" in
     # Stop the container
     ID=$(docker ps -a | grep "$CONTAINER_NAME" |  awk '{print $1}')
     if [[ ! -z $ID ]]; then
-        docker stop $ID > /dev/null
+        docker kill $ID > /dev/null
         docker rm $ID > /dev/null
     fi
 
