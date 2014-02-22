@@ -126,12 +126,6 @@ EOF
         ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
 
         if [[ -z "$ID" ]]; then
-            # Check if RethinkDB image is installed, and pull it if not
-            IMAGE=$(docker images | grep $RETHINKDB_IMAGE | awk '{print $3}')
-            if [[ -z $IMAGE ]]; then
-                docker pull $RETHINKDB_IMAGE
-            fi
-
             docker run -v $VOLUME -name=$CONTAINER_NAME -d $RETHINKDB_IMAGE --bind all
         else
             # If container already exists, start it if it's not running
