@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+set -e; [[ $DOKKU_TRACE ]] && set -x
 
 RETHINKDB_IMAGE=crosbymichael/rethinkdb
 
@@ -67,7 +67,7 @@ case "$1" in
         docker stop $ID > /dev/null
         docker rm $ID > /dev/null
     fi
-    
+
     # Remove persistent volume
     if [[ -d "$VOLUME_DIR" ]]; then
         rm -rf "$VOLUME_DIR"
@@ -118,20 +118,20 @@ EOF
     elif [[ -d "$PENDING_DIR/$APP" ]]; then
         VOLUME="$PENDING_DIR/$APP:/rethinkdb"
     fi
-    
+
     if [[ -z $VOLUME ]]; then
         echo "No RethinkDB volume found for $APP"
         exit 1
     else
         # Stop existing container with the same persistent RethinkDB
         dokku rethinkdb:stop $APP
-        
+
         # Check if RethinkDB image is installed, and pull it if not
         IMAGE=$(docker images | grep $RETHINKDB_IMAGE | awk '{print $3}')
         if [[ -z $IMAGE ]]; then
             docker pull $RETHINKDB_IMAGE
         fi
-        
+
         docker run -v $VOLUME -name=$CONTAINER_NAME -d $RETHINKDB_IMAGE
         sleep 1
         dokku rethinkdb:info $APP

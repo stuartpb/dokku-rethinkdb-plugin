@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+set -e; [[ $DOKKU_TRACE ]] && set -x
 
 APP="$1"
 
