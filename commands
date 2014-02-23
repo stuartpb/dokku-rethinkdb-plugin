@@ -51,7 +51,7 @@ docker_inspect_port() {
     NAME="$1"
     PORT="$2"
     DUMP="{{(index (index .NetworkSettings.Ports \"$PORT/tcp\") 0).HostPort}}"
-    docker inspect -format=$DUMP $NAME 2> /dev/null || true
+    docker inspect "-format=$DUMP" $NAME 2> /dev/null || true
 }
 
 bind_port() {
