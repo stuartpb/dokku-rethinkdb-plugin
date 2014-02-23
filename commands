@@ -79,13 +79,13 @@ case "$1" in
     else
         echo "-----> Creating new RethinkDB volume for $APP"
         if $APP_EXISTS; then
-            mkdir -p "$VOLUME_DIR"
-            chown -R dokku:dokku "$VOLUME_DIR"
+            VOLUME_DIR="$DOKKU_ROOT/$APP/rethinkdb"
         else
-            mkdir -p "$PENDING_DIR/$APP"
-            chown -R dokku:dokku "$PENDING_DIR"
-            # Container will be linked in pre-release hook
+            VOLUME_DIR="$PENDING_DIR/$APP"
         fi
+        mkdir -p "$VOLUME_DIR"
+        chown -R dokku:dokku "$VOLUME_DIR"
+        # Container will be linked in pre-release hook
     fi
 
     if $APP_EXISTS; then

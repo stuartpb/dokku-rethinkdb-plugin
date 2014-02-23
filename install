@@ -3,4 +3,9 @@ set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 
 RETHINKDB_IMAGE=crosbymichael/rethinkdb
 
+PENDING_DIR="$DOKKU_ROOT/.rethinkdb/pending-volumes"
+
+mkdir -p "$PENDING_DIR"
+chown -R dokku:dokku "$PENDING_DIR"
+
 docker pull $RETHINKDB_IMAGE
