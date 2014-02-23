@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-set -e; [[ $DOKKU_TRACE ]] && set -x
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 
 APP="$1"
 
 CONTAINER_NAME="rethinkdb_$APP"
 
 # Kill any existing RethinkDB container for this app
-ID=$(docker ps -a | grep "$CONTAINER_NAME" |  awk '{print $1}')
+ID=$(docker inspect '-f={{.ID}}' "$1" 2> /dev/null || true)
 if [[ ! -z $ID ]]; then
     docker kill $ID > /dev/null
     docker rm $ID > /dev/null

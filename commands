@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e; [[ $DOKKU_TRACE ]] && set -x
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 
 RETHINKDB_IMAGE=crosbymichael/rethinkdb
 
@@ -40,6 +40,10 @@ config_restart_app() {
   echo "-----> Deploying $APP ..."
   dokku deploy $APP
   echo "-----> Deploy complete!"
+}
+
+docker_get_id() {
+    docker inspect '-f={{.ID}}' "$1" 2> /dev/null || true
 }
 
 docker_inspect_port() {
@@ -93,7 +97,7 @@ case "$1" in
 
   rethinkdb:delete)
     # Stop the container
-    ID=$(docker ps -a | grep "$CONTAINER_NAME" |  awk '{print $1}')
+    ID=$(docker_get_id "$CONTAINER_NAME")
     if [[ ! -z $ID ]]; then
         docker kill $ID > /dev/null
         docker rm $ID > /dev/null
@@ -177,7 +181,7 @@ EOF
     ;;
 
   rethinkdb:stop)
-    ID=$(docker ps | grep "$CONTAINER_NAME" | awk '{print $1}')
+    ID=$(docker_get_id "$CONTAINER_NAME")
     if [[ ! -z "$ID" ]]; then
         docker stop $ID > /dev/null
     fi
@@ -190,7 +194,7 @@ EOF
     fi
 
     dokku rethinkdb:stop $APP
-    ID=$(docker ps | grep "$CONTAINER_NAME" | awk '{print $1}')
+    ID=$(docker_get_id "$CONTAINER_NAME")
     if [[ ! -z "$ID" ]]; then
         docker rm $ID > /dev/null
     fi
@@ -221,13 +225,13 @@ EOF
     ;;
 
   rethinkdb:info)
-    ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
+    ID=$(docker_get_id "$CONTAINER_NAME")
     if [[ -z "$ID" ]]; then
         echo "No container found for $APP"
         exit 1
     else
         IP=$(docker inspect -f '{{.NetworkSettings.IPAddress}}' $ID)
-        echo "       Container ID: ${ID}"
+        echo "       Container ID: ${ID:0:12}"
         echo "       Container IP: ${IP}"
         WEBUI_PORT=$(docker_inspect_port $ID 8080
         if [[ !-z "$WEBUI_PORT" ]]; then
@@ -241,7 +245,7 @@ EOF
     ;;
 
   rethinkdb:logs)
-    ID=$(docker ps -a | grep "$CONTAINER_NAME" |  awk '{print $1}')
+    ID=$(docker_get_id "$CONTAINER_NAME")
     docker logs $ID | tail -n 100
     ;;
 
