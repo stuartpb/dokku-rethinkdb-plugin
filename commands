@@ -217,7 +217,7 @@ EOF
 
     # Save all dynamic port bindings as static bindings
     for port in "${DYNAMIC_PORTS[@]}"; do
-        HOST_PORT=$(docker_inspect_port $CONTAINER_NAME $CONTAINER_PORT)
+        HOST_PORT=$(docker_inspect_port $CONTAINER_NAME $port)
         sed -i "s/^$port\$/$HOST_PORT:$port/" $BIND_FILE
     done
 
