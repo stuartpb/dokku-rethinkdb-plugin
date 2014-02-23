@@ -6,7 +6,7 @@ APP="$1"
 CONTAINER_NAME="rethinkdb_$APP"
 
 # Kill any existing RethinkDB container for this app
-ID=$(docker inspect '-f={{.ID}}' "$1" 2> /dev/null || true)
+ID=$(docker inspect '-f={{.ID}}' "$CONTAINER_NAME" 2> /dev/null || true)
 if [[ ! -z $ID ]]; then
     docker kill $ID > /dev/null
     docker rm $ID > /dev/null
