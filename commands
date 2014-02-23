@@ -204,7 +204,7 @@ EOF
     if [[ -f "$BIND_FILE" ]]; then
         while read line; do
           PORTS+=("-p" "$line")
-          if [[ "$line" !~ [0-9]+\:[0-9]+$ ]]; then
+          if [[ ! "$line" =~ [0-9]+\:[0-9]+$ ]]; then
             DYNAMIC_PORTS+=("$line")
           fi
         done < $BIND_FILE
@@ -233,12 +233,12 @@ EOF
         IP=$(docker inspect -f '{{.NetworkSettings.IPAddress}}' $ID)
         echo "       Container ID: ${ID:0:12}"
         echo "       Container IP: ${IP}"
-        WEBUI_PORT=$(docker_inspect_port $ID 8080
-        if [[ !-z "$WEBUI_PORT" ]]; then
+        WEBUI_PORT=$(docker_inspect_port $ID 8080)
+        if [[ ! -z "$WEBUI_PORT" ]]; then
             echo "       WebUI public port: $WEBUI_PORT"
         fi
         CLUSTER_PORT=$(docker_inspect_port $ID 29015)
-        if [[ !-z "$CLUSTER_PORT" ]]; then
+        if [[ ! -z "$CLUSTER_PORT" ]]; then
             echo "       Cluster public port: $CLUSTER_PORT"
         fi
     fi
@@ -247,7 +247,7 @@ EOF
   rethinkdb:logs)
     ID=$(docker_get_id "$CONTAINER_NAME")
     docker logs $ID | tail -n 100
-    ;;
+   ;;
 
   help)
     cat && cat<<EOF
