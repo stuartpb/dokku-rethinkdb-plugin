@@ -67,7 +67,7 @@ bind_port() {
         sed -i "/$CONTAINER_PORT\$/ d" $BIND_FILE
     fi
 
-    echo PORT_BINDING >>"$BIND_FILE"
+    echo $PORT_BINDING >>"$BIND_FILE"
 }
 
 case "$1" in
