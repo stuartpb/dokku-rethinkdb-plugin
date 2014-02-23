@@ -22,10 +22,10 @@ if [[ $1 == rethinkdb:* ]]; then
     VOLUME_DIR=""
     if [[ -d "$DOKKU_ROOT/$APP/rethinkdb" ]]; then
         VOLUME_DIR="$DOKKU_ROOT/$APP/rethinkdb"
-        BIND_FILE="$VOLUME_DIR/PUBLISH"
     elif [[ -d "$PENDING_DIR/$APP" ]]; then
         VOLUME_DIR="$PENDING_DIR/$APP"
     fi
+    BIND_FILE="$VOLUME_DIR/PUBLISH"
 
     CONTAINER_NAME="rethinkdb_$APP"
     ENV_FILE="$DOKKU_ROOT/$APP/ENV"
@@ -64,19 +64,6 @@ bind_port() {
     fi
 
     echo PORT_BINDING >>"$BIND_FILE"
-
-    # Save randomly-generated dynamic bindings as static
-    # NOTE: We only start in this case because we use the port assignments
-    # from starting the container to set the ports. Either way, rethinkdb:start
-    # gets called in the redeployment that normally follows a call to this
-    # function.
-    # This is hacky (we're starting extra containers for almost no reason),
-    # but it's how I'm doing it right now.
-    if [[ -z HOST_PORT ]]; then
-        dokku rethinkdb:start $APP
-        HOST_PORT=$(dokku_inspect_port $CONTAINER_NAME $CONTAINER_PORT)
-        sed -i "s/^$CONTAINER_PORT\$/$CONTAINER_PORT:$HOST_PORT/" $BIND_FILE
-    fi
 }
 
 case "$1" in
@@ -149,20 +136,44 @@ EOF
     ;;
 
   rethinkdb:bind-webui)
+    if [[ -z $VOLUME_DIR ]]; then
+        echo "No RethinkDB volume found for $APP"
+        exit 1
+    fi
     bind_port $APP 8080 "$3"
-    dokku deploy $APP
+    if $APP_EXISTS; then
+        dokku deploy $APP
+    else
+        dokku rethinkdb:start $app
+    fi
     ;;
 
   rethinkdb:bind-cluster)
+    if [[ -z $VOLUME_DIR ]]; then
+        echo "No RethinkDB volume found for $APP"
+        exit 1
+    fi
     bind_port $APP 29015 "$3"
-    dokku deploy $APP
+    if $APP_EXISTS; then
+        dokku deploy $APP
+    else
+        dokku rethinkdb:start $app
+    fi
     ;;
 
   rethinkdb:unbind)
-    if [ -f $ENV_FILE ]; then
+    if [[ -z $VOLUME_DIR ]]; then
+        echo "No RethinkDB volume found for $APP"
+        exit 1
+    fi
+    if [ -f $BIND_FILE ]; then
         rm $BIND_FILE
     fi
-    dokku rethinkdb:start $APP
+    if $APP_EXISTS; then
+        dokku deploy $APP
+    else
+        dokku rethinkdb:start $app
+    fi
     ;;
 
   rethinkdb:stop)
@@ -176,29 +187,37 @@ EOF
     if [[ -z $VOLUME_DIR ]]; then
         echo "No RethinkDB volume found for $APP"
         exit 1
-    else
-        dokku rethinkdb:stop $APP
-        ID=$(docker ps | grep "$CONTAINER_NAME" | awk '{print $1}')
-        if [[ ! -z "$ID" ]]; then
-            docker rm $ID > /dev/null
-        fi
-
-        PORTS=()
-        if [[ -z "$BIND_FILE" && -f "$BIND_FILE" ]]; then
-            while read line
-            do
-              PORTS+=("-p")
-              PORTS+=("$line")
-            done < $BIND_FILE
-        fi
-
-        VOLUME="$VOLUME_DIR:/rethinkdb"
-
-        docker run -v $VOLUME -name=$CONTAINER_NAME ${PORTS[@]} \
-            -d $RETHINKDB_IMAGE --bind all
-
-        dokku rethinkdb:info $APP
     fi
+
+    dokku rethinkdb:stop $APP
+    ID=$(docker ps | grep "$CONTAINER_NAME" | awk '{print $1}')
+    if [[ ! -z "$ID" ]]; then
+        docker rm $ID > /dev/null
+    fi
+
+    PORTS=()
+    DYNAMIC_PORTS=()
+    if [[ -f "$BIND_FILE" ]]; then
+        while read line; do
+          PORTS+=("-p" "$line")
+          if [[ "$line" !~ [0-9]+\:[0-9]+$ ]]; then
+            DYNAMIC_PORTS+=("$line")
+          fi
+        done < $BIND_FILE
+    fi
+
+    VOLUME="$VOLUME_DIR:/rethinkdb"
+
+    docker run -v $VOLUME -name=$CONTAINER_NAME ${PORTS[@]} \
+        -d $RETHINKDB_IMAGE --bind all
+
+    # Save all dynamic port bindings as static bindings
+    for port in "${DYNAMIC_PORTS[@]}"; do
+        HOST_PORT=$(docker_inspect_port $CONTAINER_NAME $CONTAINER_PORT)
+        sed -i "s/^$port\$/$HOST_PORT:$port/" $BIND_FILE
+    done
+
+    dokku rethinkdb:info $APP
     ;;
 
   rethinkdb:info)
@@ -210,6 +229,14 @@ EOF
         IP=$(docker inspect -f '{{.NetworkSettings.IPAddress}}' $ID)
         echo "       Container ID: ${ID}"
         echo "       Container IP: ${IP}"
+        WEBUI_PORT=$(docker_inspect_port $ID 8080
+        if [[ !-z "$WEBUI_PORT" ]]; then
+            echo "       WebUI public port: $WEBUI_PORT"
+        fi
+        CLUSTER_PORT=$(docker_inspect_port $ID 29015)
+        if [[ !-z "$CLUSTER_PORT" ]]; then
+            echo "       Cluster public port: $CLUSTER_PORT"
+        fi
     fi
     ;;
 
@@ -222,11 +249,14 @@ EOF
     cat && cat<<EOF
     rethinkdb:create <app>                          Create a RethinkDB container
     rethinkdb:delete <app>                          Delete specified RethinkDB container
-    rethinkdb:link <app>                            Set variables to link to RethinkDB container
-    rethinkdb:start <app>                           Start app's RethinkDB container
-    rethinkdb:stop <app>                            Stop app's RethinkDB container
-    rethinkdb:info <app>                            Display RethinkDB container address and ports
+    rethinkdb:bind-webui <app> [host port]          Bind app's RethinkDB container WebUI to host port
+    rethinkdb:bind-cluster <app> [host port]        Bind app's RethinkDB cluster port to host
+    rethinkdb:unbind <app>                          Unbind app RethinkDB container host port bindings
     rethinkdb:logs <app>                            Display last logs from RethinkDB container
+    rethinkdb:info <app>                            Display RethinkDB container address and ports
+    rethinkdb:link <app>                            Set app config to link to RethinkDB container
+    rethinkdb:start <app>                           (Re)start app's RethinkDB container
+    rethinkdb:stop <app>                            Stop app's RethinkDB container
 EOF
     ;;
 
