@@ -10,9 +10,11 @@ containers for apps.
 
 - **No dependencies** (other than a recent development version of Dokku.)
   *Wow!*
+- **Deletes cleanly with apps.** *Oh my!*
 - **Survives reboots, cleanups, and redeploys.** *Holy cow!*
-- **Deletes cleanly with apps.** *Am I dreaming?*
-- **Can add before or after pushing an app.** *Is this real life?*
+- **Can add before or after pushing an app.** *Am I dreaming?*
+- **Allows access to admin ports through binding to host interfaces.** *Is this
+  real life?*
 
 ![Vince McMahon reacts to dokku-rethinkdb-plugin](http://i.imgur.com/ef28TQS.gif)
 
@@ -26,16 +28,6 @@ containers for apps.
 cd /var/lib/dokku/plugins
 git clone https://github.com/stuartpb/dokku-rethinkdb-plugin rethinkdb
 dokku plugins-install
-```
-
-## Commands
-
-```
-$ dokku help
-    rethinkdb:create <app>          Create a RethinkDB container
-    rethinkdb:delete <app>          Delete specified RethinkDB container
-    rethinkdb:info <app>            Display RethinkDB container information
-    rethinkdb:logs <app>            Display last logs from RethinkDB container
 ```
 
 ## Simple usage
@@ -85,38 +77,60 @@ the RethinkDB example apps).
 
 ## Advanced usage
 
-(Re)start a RethinkDB container independently of a running app:
+*All of these commands are detailed when running `dokku help`.*
+
+Bind a port on the host to the Web Admin UI for a RethinkDB container:
 
 ```
-dokku rethinkdb:start app
+dokku rethinkdb:bind-webui <app> [host port]
 ```
 
-Stop an app's running RethinkDB container:
+Bind a port on the host to the cluster port (as used by the RethinkDB CLI) for
+a RethinkDB container:
 
 ```
-dokku rethinkdb:stop app
+dokku rethinkdb:bind-cluster <app> [host port]
 ```
 
-(Re)set config variables to direct to a linked RethinkDB container:
+Release a RethinkDB container's bindings to host ports (does not affect links
+to the associated app):
 
 ```
-dokku rethinkdb:link foo
+dokku rethinkdb:unbind <app>
 ```
 
-Unlink and delete a RethinkDB container:
+Unlink and delete the RethinkDB container and data for an app:
 
 ```
-dokku rethinkdb:delete foo
+dokku rethinkdb:delete <app>
 ```
 
 Read app RethinkDB container logs:
 
 ```
-dokku rethinkdb:logs foo
+dokku rethinkdb:logs <app>
 ```
 
-Get RethinkDB address and ports:
+Get RethinkDB container ID, IP, and any bound ports:
 
 ```
-dokku rethinkdb:info foo
+dokku rethinkdb:info <app>
+```
+
+(Re)start a RethinkDB container independently of a running app:
+
+```
+dokku rethinkdb:start <app>
+```
+
+Stop an app's running RethinkDB container:
+
+```
+dokku rethinkdb:stop <app>
+```
+
+(Re)set environment variables to direct to a linked RethinkDB container:
+
+```
+dokku rethinkdb:link <app>
 ```
