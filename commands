@@ -144,7 +144,7 @@ EOF
         echo "No RethinkDB volume found for $APP"
         exit 1
     fi
-    bind_port $APP 8080 "$3"
+    bind_port 8080 "$3"
     if $APP_EXISTS; then
         dokku deploy $APP
     else
@@ -157,7 +157,7 @@ EOF
         echo "No RethinkDB volume found for $APP"
         exit 1
     fi
-    bind_port $APP 29015 "$3"
+    bind_port 29015 "$3"
     if $APP_EXISTS; then
         dokku deploy $APP
     else
