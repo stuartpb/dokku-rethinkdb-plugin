@@ -213,7 +213,7 @@ EOF
 
     VOLUME="$VOLUME_DIR:/rethinkdb"
 
-    docker run -u $(id -u $RUNAS_USER) -v $VOLUME -name=$CONTAINER_NAME \
+    docker run -u $(id -u $RUNAS_USER) -v $VOLUME --name=$CONTAINER_NAME \
         ${PORTS[@]} -d $RETHINKDB_IMAGE --bind all
 
     # Save all dynamic port bindings as static bindings
