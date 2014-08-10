@@ -44,7 +44,11 @@ config_restart_app() {
 }
 
 docker_get_id() {
-    docker inspect '-f={{.ID}}' "$1" 2> /dev/null || true
+    local CID=`docker inspect '-f={{.Id}}' "$1" 2> /dev/null || true`
+    if [[ "$CID" == "<no value>" ]]; then
+      CID=`docker inspect '-f={{.ID}}' "$1" 2> /dev/null || true`
+    fi
+    echo "$CID"
 }
 
 docker_inspect_port() {
