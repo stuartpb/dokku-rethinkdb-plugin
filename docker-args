@@ -8,5 +8,5 @@ CONTAINER_NAME="rethinkdb_$APP"
 VOLUME_DIR="$DOKKU_ROOT/$APP/rethinkdb"
 
 if [[ -d "$VOLUME_DIR" ]]; then
-  echo "$STDIN-link $CONTAINER_NAME:rethinkdb_link"
+  echo "$STDIN -link $CONTAINER_NAME:rethinkdb_link"
 fi
