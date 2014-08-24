@@ -6,6 +6,8 @@ APP="$1"
 CONTAINER_NAME="rethinkdb_$APP"
 VOLUME_DIR="$DOKKU_ROOT/$APP/rethinkdb"
 
+cat
+
 if [[ -d "$VOLUME_DIR" ]]; then
   echo "--link $CONTAINER_NAME:rethinkdb_link"
 fi
