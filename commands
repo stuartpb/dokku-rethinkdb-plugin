@@ -2,7 +2,6 @@
 set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 
 RETHINKDB_IMAGE=rethinkdb:1.16.0
-RUNAS_USER=dokku
 
 PENDING_DIR="$DOKKU_ROOT/.rethinkdb/pending-volumes"
 
@@ -217,7 +216,7 @@ EOF
 
     VOLUME="$VOLUME_DIR:/rethinkdb"
 
-    docker run -u $(id -u $RUNAS_USER) -v $VOLUME --name=$CONTAINER_NAME \
+    docker run -v $VOLUME --name=$CONTAINER_NAME \
         ${PORTS[@]} -d $RETHINKDB_IMAGE --bind all
 
     # Save all dynamic port bindings as static bindings
