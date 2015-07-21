@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 
-RETHINKDB_IMAGE=rethinkdb:1.16.0
+RETHINKDB_IMAGE=rethinkdb:2.0.4
 
 PENDING_DIR="$DOKKU_ROOT/.rethinkdb/pending-volumes"
 
